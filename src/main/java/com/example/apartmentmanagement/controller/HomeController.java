@@ -19,17 +19,17 @@ public class HomeController {
     private UserService userService;
 
     @PostMapping("/login")
-    public String login(@RequestParam String userName, @RequestParam String password, HttpSession session) {
+    public User login(@RequestParam String userName, @RequestParam String password, HttpSession session) {
         User user = userService.getUserByName(userName);
         if (user != null) {
             String decryptedPassword = AESUtil.decrypt(user.getPassword());
             if (password.equals(decryptedPassword)) {
                 session.setAttribute("user", user);
                 System.out.println("Session ID after login: " + session.getId());
-                return "Login successful";
+                return null;
             }
         }
-        return user.getRole();
+        return user;
     }
 
     @GetMapping("/user")
