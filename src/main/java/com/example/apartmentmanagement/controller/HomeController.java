@@ -29,7 +29,7 @@ public class HomeController {
                 return "Login successful";
             }
         }
-        return "Invalid credentials";
+        return user.getRole();
     }
 
     @GetMapping("/user")
