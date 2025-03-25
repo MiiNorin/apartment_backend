@@ -172,6 +172,7 @@ public class HomeController {
 
         response.put("message", "Mã OTP đã được gửi đến email của bạn");
         response.put("status", HttpStatus.OK.value());
+        response.put("otp", otp);
         return ResponseEntity.ok(response);
     }
 
