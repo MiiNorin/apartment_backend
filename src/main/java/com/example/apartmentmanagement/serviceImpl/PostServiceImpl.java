@@ -251,7 +251,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostResponseDTO> filterPosts(String priceRange, String areaRange, String bedrooms, String sortBy) {
+    public List<PostResponseDTO> filterPosts(String priceRange, String areaRange, String bedrooms,String status, String sortBy) {
         List<Post> posts;
 
         // Lọc theo giá
@@ -288,6 +288,11 @@ public class PostServiceImpl implements PostService {
         if (bedrooms != null) {
             int bedroomCount = Integer.parseInt(bedrooms);
             posts = posts.stream().filter(p -> p.getApartment().getNumberOfBedrooms() == bedroomCount).collect(Collectors.toList());
+        }
+
+        // Lọc theo trạng thái căn hộ (Cho Thuê hoặc Mua Bán)
+        if (status != null) {
+            posts = posts.stream().filter(p -> p.getApartment().getStatus().equalsIgnoreCase(status)).collect(Collectors.toList());
         }
 
         // Sắp xếp kết quả
