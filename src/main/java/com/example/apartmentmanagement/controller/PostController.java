@@ -113,9 +113,10 @@ public class PostController {
             @RequestParam(required = false) String priceRange,
             @RequestParam(required = false) String areaRange,
             @RequestParam(required = false) String bedrooms,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortBy) {
 
-        List<PostResponseDTO> filteredPosts = postService.filterPosts(priceRange, areaRange, bedrooms, sortBy);
+        List<PostResponseDTO> filteredPosts = postService.filterPosts(priceRange, areaRange, bedrooms,status, sortBy);
         Map<String, Object> response = new HashMap<>();
 
         if (filteredPosts.isEmpty()) {
