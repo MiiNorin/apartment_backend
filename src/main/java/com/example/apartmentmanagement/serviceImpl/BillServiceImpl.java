@@ -2,14 +2,8 @@ package com.example.apartmentmanagement.serviceImpl;
 
 import com.example.apartmentmanagement.dto.BillResponseDTO;
 import com.example.apartmentmanagement.dto.BillRequestDTO;
-import com.example.apartmentmanagement.entities.Apartment;
-import com.example.apartmentmanagement.entities.Bill;
-import com.example.apartmentmanagement.entities.Payment;
-import com.example.apartmentmanagement.entities.User;
-import com.example.apartmentmanagement.repository.ApartmentRepository;
-import com.example.apartmentmanagement.repository.BillRepository;
-import com.example.apartmentmanagement.repository.PaymentRepository;
-import com.example.apartmentmanagement.repository.UserRepository;
+import com.example.apartmentmanagement.entities.*;
+import com.example.apartmentmanagement.repository.*;
 import com.example.apartmentmanagement.service.BillService;
 import com.example.apartmentmanagement.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,6 +18,12 @@ import java.util.stream.Collectors;
 public class BillServiceImpl implements BillService {
 
     @Autowired
+    private ApartmentRepository apartmentRepository;
+
+    @Autowired
+    private ConsumptionRepository consumptionRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -31,6 +31,7 @@ public class BillServiceImpl implements BillService {
 
     @Autowired
     private NotificationService notificationService;
+
     @Autowired
     private PaymentRepository paymentRepository;
 
@@ -44,7 +45,7 @@ public class BillServiceImpl implements BillService {
                 .map(bill -> new BillResponseDTO(
                         bill.getBillId(),
                         bill.getBillContent(),
-                        bill.getElectricBill(),
+                        bill.getMonthlyPaid(),
                         bill.getWaterBill(),
                         bill.getOthers(),
                         bill.getTotal(),
@@ -62,7 +63,7 @@ public class BillServiceImpl implements BillService {
         BillResponseDTO billResponseDTO = new BillResponseDTO(
                 bill.getBillId(),
                 bill.getBillContent(),
-                bill.getElectricBill(),
+                bill.getMonthlyPaid(),
                 bill.getWaterBill(),
                 bill.getOthers(),
                 bill.getTotal(),
@@ -110,7 +111,7 @@ public class BillServiceImpl implements BillService {
         return new BillResponseDTO(
                 bill.getBillId(),
                 bill.getBillContent(),
-                bill.getElectricBill(),
+                bill.getMonthlyPaid(),
                 bill.getWaterBill(),
                 bill.getOthers(),
                 bill.getTotal(),
@@ -131,7 +132,7 @@ public class BillServiceImpl implements BillService {
                 .map(bill -> new BillResponseDTO(
                         bill.getBillId(),
                         bill.getBillContent(),
-                        bill.getElectricBill(),
+                        bill.getMonthlyPaid(),
                         bill.getWaterBill(),
                         bill.getOthers(),
                         bill.getTotal(),
@@ -154,86 +155,83 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
-    public String addBill(String billContent, String name, int electricCons, int waterCons, float otherCost) {
-        System.out.println("bill content" + billContent);
-        User user = userRepository.findByUserName(name);
+    public BillResponseDTO addBill(BillRequestDTO billRequestDTO) {
 
-        List<Apartment> apartments = user.getApartments();
+        Consumption consumption = consumptionRepository.findById(billRequestDTO.getConsumptionId()).orElse(null);
+        if (consumption.isBillCreated()) {
+            throw new RuntimeException("Đã tạo hoá đơn cho consumption này");
+        }
+
+        Apartment apartment = apartmentRepository.findApartmentByApartmentName(billRequestDTO.getApartmentName());
+        if (apartment == null) {
+            throw new RuntimeException("Không tìm thấy căn hộ này");
+        }
+
+        User user = userRepository.findByUserNameOrEmail(apartment.getHouseholder());
+        if (user == null) {
+            throw new RuntimeException("Không tìm thấy chủ hộ");
+        }
 
         Bill newBill = new Bill();
 
-        float electricCost = calculateElectricBill(electricCons);
-        newBill.setElectricBill(electricCost);
-        newBill.setBillContent(billContent);
+        newBill.setManagementFee(billRequestDTO.getManagementFee());
+        newBill.setBillContent(billRequestDTO.getBillContent());
 
-        float waterCost = calculateWaterBill(waterCons);
+        float waterCost = calculateWaterBill(consumption.getLastMonthWaterConsumption(), consumption.getWaterConsumption());
         newBill.setWaterBill(waterCost);
-        newBill.setOthers(otherCost);
-        newBill.setTotal(electricCost + waterCost + otherCost);
+        newBill.setOthers(billRequestDTO.getOthers());
+        newBill.setTotal(billRequestDTO.getManagementFee() + waterCost + billRequestDTO.getOthers());
 
         newBill.setBillDate(LocalDateTime.now());
         newBill.setStatus("unpaid");
-
         newBill.setUser(user);
+        newBill.setCreateBillUserId(billRequestDTO.getCreatedUserId());
+        newBill.setConsumption(consumption);
+        newBill.setApartment(apartment);
 
-        for (Apartment apartment : apartments) {
-            newBill.setApartment(apartment);
-        }
+        consumption.setBillCreated(true);
+        consumptionRepository.save(consumption);
 
         String notificationContent = "Thông báo hóa đơn mới";
 
         notificationService.createNotification(notificationContent, "1", user.getUserId());
 
         billRepository.save(newBill);
-        return "success";
-    }
-    private float calculateElectricBill(int consumption) {
-        float total = 0;
-        int remaining = consumption;
-
-        int[] thresholds = {50, 50, 100, 100, 100};
-        float[] rates = {1.678F, 1.734F, 2.014F, 2.536F, 2.834F, 2.927F};
-
-        for (int i = 0; i < thresholds.length; i++) {
-            if (remaining > thresholds[i]) {
-                total += thresholds[i] * rates[i];
-                remaining -= thresholds[i];
-            } else {
-                total += remaining * rates[i];
-                return total;
-            }
-        }
-
-        // Nếu còn điện năng tiêu thụ vượt bậc cuối cùng
-        if (remaining > 0) {
-            total += remaining * rates[rates.length - 1];
-        }
-
-        return total;
+        return new BillResponseDTO(
+                newBill.getBillId(),
+                newBill.getBillContent(),
+                newBill.getMonthlyPaid(),
+                newBill.getWaterBill(),
+                newBill.getOthers(),
+                newBill.getTotal(),
+                newBill.getBillDate(),
+                newBill.getStatus(),
+                newBill.getUser().getUserName(),
+                newBill.getApartment().getApartmentName()
+        );
     }
 
-    private float calculateWaterBill(int consumption) {
-        float total = 0;
-        int remaining = consumption;
+    @Override
+    public BillResponseDTO sendBillToRenter(BillRequestDTO billRequestDTO) {
+        return null;
+    }
 
-        int[] thresholds = {10, 10, 10};
-        float[] rates = {5.973F, 7.052F, 8.669F, 15.929F};
+    public float calculateWaterBill(float lastMonthWaterConsumption, float waterConsumption) {
+        float totalCost = 0;
 
-        for (int i = 0; i < thresholds.length; i++) {
-            if (remaining > thresholds[i]) {
-                total += thresholds[i] * rates[i];
-                remaining -= thresholds[i];
-            } else {
-                total += remaining * rates[i];
-                return total;
-            }
+        float monthlyWaterPaid = waterConsumption - lastMonthWaterConsumption;
+
+        if (monthlyWaterPaid <= 10) {
+            totalCost = waterConsumption * 10000;
+        } else if (monthlyWaterPaid <= 20) {
+            totalCost = (10 * 10000) + (monthlyWaterPaid - 10) * 12000;
+        } else if (monthlyWaterPaid <= 30) {
+            totalCost = (10 * 10000) + (10 * 12000) + (monthlyWaterPaid - 20) * 15000;
+        } else {
+            totalCost = (10 * 10000) + (10 * 12000) + (10 * 15000) + (monthlyWaterPaid - 30) * 18000;
         }
 
-        if (remaining > 0) {
-            total += remaining * rates[rates.length - 1];
-        }
-
-        return total;
+        return totalCost;
     }
 
 }

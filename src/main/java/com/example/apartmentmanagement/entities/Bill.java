@@ -28,15 +28,22 @@ public class Bill {
     @Nationalized
     private String billContent;
 
-    private float electricBill;
+    // tiền thuê hằng tháng nếu căn hộ được đem cho thuê
+    private float monthlyPaid;
 
+    // tiền nước
     private float waterBill;
+
+    // phí quản lý
+    private float managementFee;
 
     private float others;
 
     private float total;
 
     private LocalDateTime billDate;
+
+    private Long createBillUserId;
 
     @Nationalized
     private String status;
@@ -48,6 +55,10 @@ public class Bill {
     @ManyToOne
     @JoinColumn(name = "user_Id", nullable = false)
     private User user;
+
+    @OneToOne
+    @JoinColumn(name = "consumption_id", referencedColumnName = "consumptionId", nullable = false)
+    private Consumption consumption;
 
     @ManyToOne
     @JoinColumn(name = "apartment_id", nullable = false)

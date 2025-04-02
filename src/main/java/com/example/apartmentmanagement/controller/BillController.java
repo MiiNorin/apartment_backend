@@ -72,33 +72,29 @@ public class BillController {
     }
 
     /**
-     * (Staff) Tao hoa don cho user
+     * (Staff) Tao hoa don cho owner
      *
      * @param request
      * @return
      */
     @PostMapping("/create")
     public ResponseEntity<Object> createBill(@RequestBody BillRequestDTO request) {
-        String result = billService.addBill(request.getBillContent(),
-                request.getUserName(),
-                request.getElectricCons(),
-                request.getWaterCons(),
-                request.getOthers());
         Map<String, Object> response = new HashMap<>();
-        if (result.equals("success")) {
+        try {
+            BillResponseDTO result = billService.addBill(request);
             response.put("status", HttpStatus.CREATED.value());
-            response.put("data", request);
+            response.put("data", result);
             response.put("message", "Tạo hoá đơn thành công");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } else {
+        } catch (RuntimeException e) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
-            response.put("message", "Khởi tạo thất bại");
+            response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 
     @GetMapping("/get_bill_info/{billId}")
-    public ResponseEntity<Object> getBillInfo(@RequestParam int month, @RequestParam int year, @PathVariable Long billId) {
+    public ResponseEntity<Object> getBillInfo(@PathVariable Long billId) {
         BillResponseDTO billResponseDTO = billService.getBillById(billId);
         Map<String, Object> response = new HashMap<>();
         if (billResponseDTO == null) {
@@ -110,6 +106,11 @@ public class BillController {
             response.put("data", billResponseDTO);
             return ResponseEntity.ok(response);
         }
+    }
+
+    @PostMapping("/monthly_paid")
+    public ResponseEntity<Object> monthlyPaid(@RequestBody BillRequestDTO request) {
+        return null;
     }
 
     @PutMapping("/update/{billid}")

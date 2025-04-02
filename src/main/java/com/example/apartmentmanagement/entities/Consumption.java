@@ -12,7 +12,6 @@ import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "consumption")
@@ -25,11 +24,18 @@ public class Consumption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long consumptionId;
 
-    private LocalDateTime consumptionDate;
+    private LocalDate consumptionDate;
 
     private float waterConsumption;
 
-    private float electricConsumption;
+    private float lastMonthWaterConsumption;
+
+    private boolean isBillCreated;
+
+    private Long uploadConsumptionUserId;
+
+    @OneToOne(mappedBy = "consumption", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Bill bill;
 
     @ManyToOne
     @JoinColumn(name = "apartment_id", nullable = false)

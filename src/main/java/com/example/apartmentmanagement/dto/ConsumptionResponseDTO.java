@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -13,17 +13,19 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ConsumptionResponseDTO {
     private Long id;
-    private LocalDateTime consumptionDate;
+    private LocalDate consumptionDate;
+    private float lastMonthWaterConsumption;
     private float waterConsumption;
-    private float electricConsumption;
     private String userName;
     private String apartmentName;
+    private boolean isBillCreated;
 
-    public ConsumptionResponseDTO(Long id, LocalDateTime consumptionDate, float waterConsumption, float electricConsumption, String userName) {
+    public ConsumptionResponseDTO(Long id, LocalDate consumptionDate, float lastMonthWaterConsumption, float waterConsumption, String userName, String apartmentName) {
         this.id = id;
         this.consumptionDate = consumptionDate;
+        this.lastMonthWaterConsumption = lastMonthWaterConsumption;
         this.waterConsumption = waterConsumption;
-        this.electricConsumption = electricConsumption;
         this.userName = userName;
+        this.apartmentName = apartmentName;
     }
 }
