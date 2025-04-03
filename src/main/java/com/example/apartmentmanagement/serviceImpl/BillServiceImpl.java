@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,33 @@ public class BillServiceImpl implements BillService {
     private PaymentRepository paymentRepository;
 
     @Override
+    public List<BillResponseDTO> getAllBill() {
+        List<Bill> bills = new ArrayList<>();
+        List<Bill> allBills = billRepository.findAll();
+        for (Bill bill : allBills) {
+            if (bill.getConsumption() != null) {
+                bills.add(bill);
+            }
+        }
+        return bills.stream()
+                .map(bill -> new BillResponseDTO(
+                        bill.getBillId(),
+                        bill.getBillContent(),
+                        bill.getMonthlyPaid(),
+                        bill.getWaterBill(),
+                        bill.getOthers(),
+                        bill.getTotal(),
+                        bill.getConsumption().getLastMonthWaterConsumption(),
+                        bill.getConsumption().getWaterConsumption(),
+                        bill.getBillDate(),
+                        bill.getStatus(),
+                        bill.getUser().getFullName(),
+                        bill.getApartment().getApartmentName()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<BillResponseDTO> getAllBillsWithinSpecTime(Long userId, int month, int year) {
         User user = userRepository.findById(userId).get();
         List<Bill> bills = user.getBills();
@@ -49,6 +77,8 @@ public class BillServiceImpl implements BillService {
                         bill.getWaterBill(),
                         bill.getOthers(),
                         bill.getTotal(),
+                        bill.getConsumption().getLastMonthWaterConsumption(),
+                        bill.getConsumption().getWaterConsumption(),
                         bill.getBillDate(),
                         bill.getStatus(),
                         bill.getUser().getFullName(),
@@ -67,6 +97,8 @@ public class BillServiceImpl implements BillService {
                 bill.getWaterBill(),
                 bill.getOthers(),
                 bill.getTotal(),
+                bill.getConsumption().getLastMonthWaterConsumption(),
+                bill.getConsumption().getWaterConsumption(),
                 bill.getBillDate(),
                 bill.getStatus(),
                 bill.getUser().getUserName(),
@@ -115,6 +147,8 @@ public class BillServiceImpl implements BillService {
                 bill.getWaterBill(),
                 bill.getOthers(),
                 bill.getTotal(),
+                bill.getConsumption().getLastMonthWaterConsumption(),
+                bill.getConsumption().getWaterConsumption(),
                 bill.getBillDate(),
                 bill.getStatus(),
                 bill.getUser().getUserName(),
@@ -136,6 +170,8 @@ public class BillServiceImpl implements BillService {
                         bill.getWaterBill(),
                         bill.getOthers(),
                         bill.getTotal(),
+                        bill.getConsumption().getLastMonthWaterConsumption(),
+                        bill.getConsumption().getWaterConsumption(),
                         bill.getBillDate(),
                         bill.getStatus(),
                         user.getUserName(),
@@ -204,6 +240,8 @@ public class BillServiceImpl implements BillService {
                 newBill.getWaterBill(),
                 newBill.getOthers(),
                 newBill.getTotal(),
+                newBill.getConsumption().getLastMonthWaterConsumption(),
+                newBill.getConsumption().getWaterConsumption(),
                 newBill.getBillDate(),
                 newBill.getStatus(),
                 newBill.getUser().getUserName(),
@@ -213,16 +251,68 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public BillResponseDTO sendBillToRenter(BillRequestDTO billRequestDTO) {
-        return null;
+        Consumption consumption = consumptionRepository.findById(billRequestDTO.getConsumptionId()).orElse(null);
+        if (consumption.isBillCreated()) {
+            throw new RuntimeException("Đã tạo hoá đơn cho consumption này");
+        }
+
+        Apartment apartment = apartmentRepository.findApartmentByApartmentName(billRequestDTO.getApartmentName());
+        if (apartment == null) {
+            throw new RuntimeException("Không tìm thấy căn hộ này");
+        }
+
+        User user = userRepository.findByUserNameOrEmail(apartment.getHouseholder());
+        if (user == null) {
+            throw new RuntimeException("Không tìm thấy chủ hộ");
+        }
+
+        Bill newBill = new Bill();
+
+        newBill.setManagementFee(billRequestDTO.getManagementFee());
+        newBill.setBillContent(billRequestDTO.getBillContent());
+
+        float waterCost = calculateWaterBill(consumption.getLastMonthWaterConsumption(), consumption.getWaterConsumption());
+        newBill.setWaterBill(waterCost);
+        newBill.setMonthlyPaid(billRequestDTO.getMonthlyPaid());
+        newBill.setTotal(billRequestDTO.getManagementFee() + waterCost + billRequestDTO.getMonthlyPaid());
+
+        newBill.setBillDate(LocalDateTime.now());
+        newBill.setStatus("unpaid");
+        newBill.setUser(user);
+        newBill.setCreateBillUserId(billRequestDTO.getCreatedUserId());
+        newBill.setConsumption(consumption);
+        newBill.setApartment(apartment);
+
+        consumption.setBillCreated(true);
+        consumptionRepository.save(consumption);
+
+        String notificationContent = "Thông báo hóa đơn mới";
+
+        notificationService.createNotification(notificationContent, "1", user.getUserId());
+
+        billRepository.save(newBill);
+        return new BillResponseDTO(
+                newBill.getBillId(),
+                newBill.getBillContent(),
+                newBill.getMonthlyPaid(),
+                newBill.getWaterBill(),
+                newBill.getOthers(),
+                newBill.getTotal(),
+                newBill.getConsumption().getLastMonthWaterConsumption(),
+                newBill.getConsumption().getWaterConsumption(),
+                newBill.getBillDate(),
+                newBill.getStatus(),
+                newBill.getUser().getUserName(),
+                newBill.getApartment().getApartmentName()
+        );
     }
 
-    public float calculateWaterBill(float lastMonthWaterConsumption, float waterConsumption) {
+    public static float calculateWaterBill(float lastMonthWater, float waterConsumption) {
         float totalCost = 0;
 
-        float monthlyWaterPaid = waterConsumption - lastMonthWaterConsumption;
-
+        float monthlyWaterPaid = waterConsumption - lastMonthWater;
         if (monthlyWaterPaid <= 10) {
-            totalCost = waterConsumption * 10000;
+            totalCost = monthlyWaterPaid * 10000;
         } else if (monthlyWaterPaid <= 20) {
             totalCost = (10 * 10000) + (monthlyWaterPaid - 10) * 12000;
         } else if (monthlyWaterPaid <= 30) {

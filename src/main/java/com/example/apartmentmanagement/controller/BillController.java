@@ -2,12 +2,9 @@ package com.example.apartmentmanagement.controller;
 
 import com.example.apartmentmanagement.dto.BillResponseDTO;
 import com.example.apartmentmanagement.dto.BillRequestDTO;
-import com.example.apartmentmanagement.entities.Bill;
 import com.example.apartmentmanagement.entities.User;
-import com.example.apartmentmanagement.repository.BillRepository;
 import com.example.apartmentmanagement.repository.UserRepository;
 import com.example.apartmentmanagement.service.BillService;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +22,20 @@ public class BillController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @GetMapping("/viewAll")
+    public ResponseEntity<Object> getAllBills() {
+        List<BillResponseDTO> billResponseDTOS = billService.getAllBill();
+        Map<String, Object> response = new HashMap<>();
+        if (billResponseDTOS.isEmpty()) {
+            response.put("message", "Chưa có hoá đơn nào");
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+        response.put("data", billResponseDTOS);
+        response.put("status", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * (Staff) Xem danh sach bill cua user bat ky trong khoang thoi gian cu the
@@ -92,6 +103,29 @@ public class BillController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    /**
+     * (Owner) Tao hoa don cho rentor
+     *
+     * @param request
+     * @return
+     */
+    @PostMapping("/create_for_rentor")
+    public ResponseEntity<Object> createBillForRentor(@RequestBody BillRequestDTO request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            BillResponseDTO result = billService.addBill(request);
+            response.put("status", HttpStatus.CREATED.value());
+            response.put("data", result);
+            response.put("message", "Tạo hoá đơn thành công");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 
     @GetMapping("/get_bill_info/{billId}")
     public ResponseEntity<Object> getBillInfo(@PathVariable Long billId) {
