@@ -40,6 +40,8 @@ public class Payment {
 
     private float price;
 
+    private float fee;
+
     @ManyToOne
     @JoinColumn(name = "user_Id", nullable = false)
     private User user;

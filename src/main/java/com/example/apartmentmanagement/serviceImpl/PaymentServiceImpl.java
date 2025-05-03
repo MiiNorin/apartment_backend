@@ -37,7 +37,8 @@ public class PaymentServiceImpl implements PaymentService {
                         payment.getPaymentInfo(),
                         payment.getPaymentType(),
                         payment.getUser().getUserId(),
-                        payment.getBill().getBillId()
+                        payment.getBill().getBillId(),
+                        payment.getFee()
                 ))
                 .collect(Collectors.toList());
     }
