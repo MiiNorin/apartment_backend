@@ -1,0 +1,8 @@
+
+target
+pom.xml.lock
+.idea
+.git
+.settings/
+*.iml
+*.log

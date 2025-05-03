@@ -120,7 +120,9 @@ public class BillServiceImpl implements BillService {
         }
 
         if(userPayment.getUserId() != owner.getUserId() && bill.getBillType().equalsIgnoreCase("monthPaid")){
-            owner.setAccountBalance(owner.getAccountBalance()+bill.getAmount());
+            Float coin = bill.getAmount()/10*9;
+            System.out.println(coin);
+            owner.setAccountBalance(owner.getAccountBalance()+coin);
             userRepository.save(owner);
         }
         // Tạo bản ghi Payment
@@ -133,7 +135,6 @@ public class BillServiceImpl implements BillService {
         payment.setPrice(paymentRequestDTO.getAmount());
         payment.setPaymentType("bill");
         Payment savedPayment = paymentRepository.save(payment);
-
         bill.setStatus("paid");
         bill.setPayment(savedPayment);
         billRepository.save(bill);
