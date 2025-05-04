@@ -19,5 +19,4 @@ public class PaymentHistoryResponseDTO {
     private String paymentType;
     private Long userId;
     private Long billId;
-    private Float fee;
 }

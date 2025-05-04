@@ -120,8 +120,7 @@ public class BillServiceImpl implements BillService {
         }
 
         if(userPayment.getUserId() != owner.getUserId() && bill.getBillType().equalsIgnoreCase("monthPaid")){
-            Float coin = bill.getAmount()/10*9;
-            System.out.println(coin);
+            Float coin = bill.getAmount();
             owner.setAccountBalance(owner.getAccountBalance()+coin);
             userRepository.save(owner);
         }
