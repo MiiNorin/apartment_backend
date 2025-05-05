@@ -33,6 +33,8 @@ public interface BillService {
 
     BillResponseDTO addBillConsumption(BillRequestDTO billRequestDTO);
 
+    BillResponseDTO addBillManagement(BillRequestDTO billRequestDTO);
+
     BillResponseDTO addBillMonthPaid(BillRequestDTO billRequestDTO);
 
     BillResponseDTO sendBillToRenter(BillRequestDTO billRequestDTO);

@@ -1,6 +1,7 @@
 package com.example.apartmentmanagement.dto;
 
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 
 @Getter
 @Setter
@@ -13,6 +14,7 @@ public class BillRequestDTO {
     private Long consumptionId;
     private Long createdUserId;
     private float surcharge;
+    @Nationalized
     private String period;
     private float amount;
 }

@@ -32,6 +32,7 @@ public class Bill {
 
     private float amount;
 
+    @Nationalized
     private String period;
 
     private LocalDateTime billDate;

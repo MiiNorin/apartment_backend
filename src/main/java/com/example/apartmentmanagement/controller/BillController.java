@@ -134,6 +134,22 @@ public class BillController {
         }
     }
 
+    @PostMapping("/createBillManagement")
+    public ResponseEntity<Object> createBillManagement(@RequestBody BillRequestDTO billRequestDTO) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            BillResponseDTO result = billService.addBillManagement(billRequestDTO);
+            response.put("status", HttpStatus.CREATED.value());
+            response.put("data", result);
+            response.put("message", "Tạo hoá đơn thành công");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
     /**
      * (Owner) Tao hoa don cho rentor
      *
