@@ -6,12 +6,14 @@ WORKDIR /workspace
 
 # Copy file pom và download dependencies trước để tận dụng cache
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+#RUN mvn dependency:go-offline -B
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 
 # Copy toàn bộ source và build (bỏ test để nhanh)
 COPY . .
 #COPY src ./src
-RUN mvn clean package -DskipTests -B
+#RUN mvn clean package -DskipTests -B
+RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -B
 
 # ---------- STAGE 2: Runtime image ----------
 FROM eclipse-temurin:17-jre

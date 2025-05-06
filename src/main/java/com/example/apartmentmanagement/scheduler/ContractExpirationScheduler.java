@@ -117,7 +117,15 @@ public class ContractExpirationScheduler {
             apartment.getUsers().remove(user);
             user.setRentor(false);
             Deposit deposit = depositRepository.findDepositByUser_UserId(user.getUserId());
-            user.setAccountBalance(user.getAccountBalance()+deposit.getPrice());
+            if(deposit != null){
+                Float price = deposit.getPrice();
+                user.setAccountBalance(user.getAccountBalance()+deposit.getPrice());
+                notificationService.createAndBroadcastNotification(
+                        "Bạn đã được hoàn "+price+" (tiền cọc)",
+                        "Thông báo hoàn cọc",
+                        user.getUserId()
+                );
+            }
 
             // Cập nhật số lượng người trong căn hộ
             if (apartment.getTotalNumber() > 0) {

@@ -124,6 +124,7 @@ public class BillServiceImpl implements BillService {
             owner.setAccountBalance(owner.getAccountBalance()+coin);
             userRepository.save(owner);
         }
+
         // Tạo bản ghi Payment
         Payment payment = new Payment();
         payment.setPaymentCheck(true);
@@ -146,7 +147,6 @@ public class BillServiceImpl implements BillService {
         bill.setStatus("unpaid");
         billRepository.save(bill);
     }
-
 
     @Override
     public BillResponseDTO updateBill(Long id, BillRequestDTO billRequestDTO) {
