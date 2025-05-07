@@ -54,7 +54,6 @@ public class    OrderController {
 
             ObjectNode dataNode = objectMapper.valueToTree(data);
             dataNode.put("billId", billId);
-
             response.put("error", 0);
             response.put("message", "success");
             response.set("data", dataNode);

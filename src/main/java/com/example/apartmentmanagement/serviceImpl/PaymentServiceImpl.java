@@ -21,12 +21,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private PaymentRepository paymentRepository;
-
     @Override
     public List<PaymentHistoryResponseDTO> getPaymentHistory(Long userId, int month, int year) {
-
         List<Payment> payments = paymentRepository.findAll();
-
         return payments.stream()
                 .filter(payment -> payment.getPaymentDate().getMonthValue() == month && payment.getPaymentDate().getYear() == year)
                 .sorted(Comparator.comparing(Payment::getPaymentDate).reversed())

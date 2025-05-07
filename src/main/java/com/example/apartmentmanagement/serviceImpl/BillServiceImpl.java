@@ -122,8 +122,54 @@ public class BillServiceImpl implements BillService {
         if(userPayment.getUserId() != owner.getUserId() && bill.getBillType().equalsIgnoreCase("monthPaid")){
             Float coin = bill.getAmount();
             owner.setAccountBalance(owner.getAccountBalance()+coin);
+            notificationService.createAndBroadcastNotification(
+                    "Hóa đơn thuê căn hộ ("+bill.getApartment().getApartmentName()+") đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn thuê nhà",
+                    owner.getUserId()
+            );
+            notificationService.createAndBroadcastNotification(
+                    "Bạn đã nhận được "+coin+" coin vào tài khoản",
+                    "Thông báo nhận coin",
+                    owner.getUserId()
+            );
             userRepository.save(owner);
         }
+
+        if(bill.getBillType().equalsIgnoreCase("managementFee")){
+            notificationService.createAndBroadcastNotification(
+                    "Hóa đơn quản lý căn hộ "+bill.getApartment().getApartmentName()+" đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn quản lý căn hộ",
+                    owner.getUserId()
+            );
+            notificationService.createAndBroadcastNotification(
+                    "Hóa đơn quản lý căn hộ "+bill.getApartment().getApartmentName()+" đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn quản lý căn hộ",
+                    bill.getCreateBillUserId()
+            );
+
+        }
+
+        if(userPayment.getUserId() != owner.getUserId() && bill.getBillType().equalsIgnoreCase("water")){
+            notificationService.createAndBroadcastNotification(
+                    "Hóa đơn nước của căn hộ "+bill.getApartment().getApartmentName()+" đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn nước",
+                    owner.getUserId()
+            );
+            notificationService.createAndBroadcastNotification(
+                    "Hóa đơn nước của căn hộ "+bill.getApartment().getApartmentName()+" đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn nước",
+                    bill.getCreateBillUserId()
+            );
+            if(userPayment.getUserId() != owner.getUserId()){
+                notificationService.createAndBroadcastNotification(
+                        "Hóa đơn nước của căn hộ "+bill.getApartment().getApartmentName()+" đã được thanh toán",
+                        "Thông báo thanh toán hóa đơn nước",
+                        userPayment.getUserId()
+                );
+            }
+        }
+
+
 
         // Tạo bản ghi Payment
         Payment payment = new Payment();
