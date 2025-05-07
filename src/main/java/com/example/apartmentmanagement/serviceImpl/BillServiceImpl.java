@@ -128,6 +128,11 @@ public class BillServiceImpl implements BillService {
                     owner.getUserId()
             );
             notificationService.createAndBroadcastNotification(
+                    "Hóa đơn thuê căn hộ ("+bill.getApartment().getApartmentName()+") đã được thanh toán",
+                    "Thông báo thanh toán hóa đơn thuê nhà",
+                    userPayment.getUserId()
+            );
+            notificationService.createAndBroadcastNotification(
                     "Bạn đã nhận được "+coin+" coin vào tài khoản",
                     "Thông báo nhận coin",
                     owner.getUserId()
